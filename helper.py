@@ -11,6 +11,7 @@ col_reg = re.compile(r'\((\d+.\d+)\s+pts\)')
 
 def normalize_total_sc(df):
 	full_sc = 0
+	match = None
 	for col in extract_question_cols(df):
 		match = col_reg.search(col)
 		if (match):
@@ -23,9 +24,11 @@ def calc_cronbach_alpha(df):
 	for col in df.columns:
 		if "Question" in col:
 			var_list.append(df[col].std()**2)
+	n = len(var_list)
+	if n <= 1:
+		return 0
 	sum_var = np.sum(var_list)
 	total_sc_var = df['Total Score'].std() ** 2
-	n = df.shape[0]
 	ca = n/(n-1)*(1 - sum_var/total_sc_var)
 	return ca
 
@@ -74,7 +77,7 @@ def get_normalized_question_sc(sc_df):
 	for col in sc_df.columns:
 		if "Question" in col:
 			match = col_reg.search(col)
-		if (match):
+			if (match):
 				full_sc = float(match.group(1))
 				norm_scores = sc_df[col].apply(lambda x: x/full_sc)
 				norm_df_list.append(norm_scores)

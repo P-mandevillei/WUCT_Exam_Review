@@ -47,14 +47,31 @@ if sc_files:
 	sns.violinplot(
 		total_sc_df,
 		x='Normalized Total', y='Exam',
-		hue='internal_consistency', palette=consistency_cmap, ax=ax
+		hue='internal_consistency', palette=consistency_cmap,
+		ax=ax,
+		width=0.9,
+		inner="box", 
+		inner_kws={"box_width": 4}
 	)
+	ax.set_xlim(-0.02, 1.02)
 	ax.set_title(f"Normalized Exam Total Scores Distribution")
+	ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
 	st.pyplot(fig)
 
-	plot_df = stats_df.copy()
-	plot_df['cmap'] = plot_df['internal_consistency'].apply(lambda x: consistency_cmap[x])
-	st.bar_chart(plot_df, y='normalized_mean', color='cmap')
+	fig, ax = plt.subplots(figsize=(6, int(stats_df.shape[0]/5)))
+	sns.barplot(
+		total_sc_df,
+		y='Exam',
+		x='Normalized Total',
+		hue='internal_consistency',
+		errorbar='sd',
+		capsize=0.2,
+		palette=consistency_cmap
+	)
+	ax.tick_params(axis='x', rotation=90)
+	ax.set_title(f"Normalized Exam Averages (± SD)")
+	ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+	st.pyplot(fig)
 
 	fig, ax = plt.subplots()
 	sns.histplot(stats_df, x='normalized_mean', hue='internal_consistency', palette=consistency_cmap, bins=10)
@@ -91,15 +108,30 @@ if sc_files:
 		sns.violinplot(
 			sc_df_long,
 			x='Score', y='Question', hue='quality', 
-			palette=quality_cmap, ax=ax
+			palette=quality_cmap, ax=ax,
+			width=0.9,
+		    inner="box", 
+		    inner_kws={"box_width": 4}
 		)
+		ax.set_xlim(-0.02, 1.02)
 		ax.set_title(f"Question Scores Distribution, {display_name}")
+		ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
 		st.pyplot(fig)
 	
-		plot_df = summary.copy()
-		plot_df['cmap'] = plot_df['quality'].apply(lambda x: quality_cmap[x])
-		st.bar_chart(plot_df, y='avg', color='cmap')
+		fig, ax = plt.subplots(figsize=(6, int(summary.shape[0]/5)))
+		sns.barplot(
+			sc_df_long,
+			y='Question',
+			x='Score',
+			hue='quality',
+			errorbar='sd',
+			capsize=0.2,
+			palette=quality_cmap
+		)
 		
+		ax.set_title(f"Question Averages, {display_name}")
+		ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+		st.pyplot(fig)
 		fig, ax = plt.subplots()
 		sns.histplot(summary, x='avg', hue='quality', palette=quality_cmap, bins=10)
 		ax.set_title(f"Average Question Scores, {display_name}")
@@ -110,15 +142,20 @@ if sc_files:
 		ax.set_title(f"Discrimination Index, {display_name}")
 		st.pyplot(fig)
 	
-		fig, ax = plt.subplots(figsize=(6, int(summary.shape[0]/2.5)))
+		fig, ax = plt.subplots(figsize=(6, int(summary.shape[0]/2)))
 		sc_df_long['Normalized Total Bin'] = pd.qcut(sc_df_long['Normalized Total'], 2, labels=['Low', 'High'])
 		sns.violinplot(
 			sc_df_long,
 			x='Score', y='Question',
 			split=True, hue='Normalized Total Bin',
-			ax=ax, inner=None,
-			palette={'Low': '#1E88E5', 'High': '#FF0D57'}
+			ax=ax,
+			palette={'Low': '#1E88E5', 'High': '#FF0D57'},
+			width=1,
+		    inner="box", 
+		    inner_kws={"box_width": 3.5}
 		)
+		ax.set_xlim(-0.02, 1.02)
 		ax.set_title(f"Question Scores Relative to Total Scores, {display_name}")
+		ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
 		st.pyplot(fig)
 	question_breakdown()
