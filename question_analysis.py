@@ -7,7 +7,7 @@ import streamlit as st
 from helper import normalize_total_sc, summarize_total_score, get_normalized_question_sc, make_total_sc_df, extract_question_cols, summarize_questions
 colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
 quality_cmap = {'good': colors[2], 'ok': colors[0], 'poor': colors[1], 'need review': colors[3]}
-validity_cmap = {'reliable': colors[2], 'acceptable': colors[1], 'unreliable': colors[3]}
+consistency_cmap = {'reliable': colors[2], 'acceptable': colors[1], 'unreliable': colors[3]}
 
 st.title("WUCT Exam Review")
 
@@ -29,7 +29,7 @@ if sc_files:
 	stats_df = pd.concat(stats_list, axis=0)
 	total_sc_df = make_total_sc_df(sc_df_list, names)
 	total_sc_df = total_sc_df.merge(
-		stats_df.reset_index().rename(columns={'index': 'Exam'})[['Exam', 'internal_validity']],
+		stats_df.reset_index().rename(columns={'index': 'Exam'})[['Exam', 'internal_consistency']],
 		on='Exam'
 	)
 	
@@ -37,7 +37,7 @@ if sc_files:
 	st.dataframe(stats_df)
 
 	fig, ax = plt.subplots()
-	sns.histplot(stats_df, x='cronbach_alpha', bins=10, ax=ax, hue='internal_validity', palette=validity_cmap)
+	sns.histplot(stats_df, x='cronbach_alpha', bins=10, ax=ax, hue='internal_consistency', palette=consistency_cmap)
 	ax.set_title(f'Distribution of Cronbach\'s Alpha')
 	st.pyplot(fig)
 	
@@ -47,17 +47,17 @@ if sc_files:
 	sns.violinplot(
 		total_sc_df,
 		x='Normalized Total', y='Exam',
-		hue='internal_validity', palette=validity_cmap, ax=ax
+		hue='internal_consistency', palette=consistency_cmap, ax=ax
 	)
 	ax.set_title(f"Normalized Exam Total Scores Distribution")
 	st.pyplot(fig)
 
 	plot_df = stats_df.copy()
-	plot_df['cmap'] = plot_df['internal_validity'].apply(lambda x: validity_cmap[x])
+	plot_df['cmap'] = plot_df['internal_consistency'].apply(lambda x: consistency_cmap[x])
 	st.bar_chart(plot_df, y='normalized_mean', color='cmap')
 
 	fig, ax = plt.subplots()
-	sns.histplot(stats_df, x='normalized_mean', hue='internal_validity', palette=validity_cmap, bins=10)
+	sns.histplot(stats_df, x='normalized_mean', hue='internal_consistency', palette=consistency_cmap, bins=10)
 	ax.set_title(f"Distribution of Average Normaliezd Exam Total")
 	st.pyplot(fig)
 

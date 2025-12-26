@@ -42,7 +42,7 @@ def summarize_total_score(df, name):
 	summary.columns = [name]
 	summary = summary.transpose()
 	summary['cronbach_alpha'] = calc_cronbach_alpha(df)
-	summary['internal_validity'] = summary['cronbach_alpha'].apply(ca_rating)
+	summary['internal_consistency'] = summary['cronbach_alpha'].apply(ca_rating)
 	normalized = df['Normalized Total']
 	summary['normalized_mean'] = normalized.mean()
 	summary['normalized_std'] = normalized.std()
@@ -72,12 +72,12 @@ def di_rating(di):
 def get_normalized_question_sc(sc_df):
 	norm_df_list = []
 	for col in sc_df.columns:
-	    if "Question" in col:
-	        match = col_reg.search(col)
-	        if (match):
-	            full_sc = float(match.group(1))
-	            norm_scores = sc_df[col].apply(lambda x: x/full_sc)
-	            norm_df_list.append(norm_scores)
+		if "Question" in col:
+			match = col_reg.search(col)
+		if (match):
+				full_sc = float(match.group(1))
+				norm_scores = sc_df[col].apply(lambda x: x/full_sc)
+				norm_df_list.append(norm_scores)
 	norm_df = pd.concat(norm_df_list, axis=1)
 	return norm_df
 
