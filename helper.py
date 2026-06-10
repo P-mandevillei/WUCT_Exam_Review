@@ -135,7 +135,7 @@ def categorize_q_type(low_summ, high_summ):
 	type2_prop = type2.sum()/n*100
 	type3_prop = type3.sum()/n*100
 	type4_prop = type4.sum()/n*100
-	uncat_prop = (type1 | type2 | type3 | type4).sum()/n*100
+	uncat_prop = (~(type1 | type2 | type3 | type4)).sum()/n*100
 	type_prop_df = pd.DataFrame({
 		'type1 - Easy for Both': type1_prop, 
 		'type2 - Lower Division Discrimination': type2_prop, 
