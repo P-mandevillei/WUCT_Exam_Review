@@ -1,13 +1,12 @@
+from constants import DIS_GOOD
+from pandas.core.array_algos import masked_accumulations
+from pandas.core.array_algos import masked_accumulations
+from constants import DIS_NEED_REVIEW
+from constants import DIFF_HARD
+from constants import DIFF_EASY
 import numpy as np
 import pandas as pd
-import re
-GROUP_QUANTILE = 0.27
-DI_GOOD = 0.6
-DI_OK = 0.3
-DI_POOR = 0
-CA_RELIABLE = 0.9
-CA_ACCEPTABLE = 0.7
-col_reg = re.compile(r'\((\d+.\d+)\s+pts\)')
+from constants import *
 
 def normalize_total_sc(df):
 	full_sc = 0
@@ -62,16 +61,6 @@ def make_total_sc_df(df_list, names):
 def extract_question_cols(df):
 	return [col for col in df.columns if 'Question' in col]
 
-def di_rating(di):
-	if di > DI_GOOD:
-		return 'good'
-	elif di > DI_OK:
-		return 'ok'
-	elif di > DI_POOR:
-		return 'poor'
-	else:
-		return 'need review'
-
 def get_normalized_question_sc(sc_df):
 	norm_df_list = []
 	for col in sc_df.columns:
@@ -103,7 +92,56 @@ def summarize_questions(sc_df, norm_df):
 			'low_group_avg': lo_avg,
 			'discrimination_index': di,
 		}, index=[col])
-		summary['quality'] = summary['discrimination_index'].apply(di_rating)
+		summary['quality'] = pd.cut(summary['discrimination_index'], bins=DI_BINS, labels=DI_LABELS, right=True, include_lowest=True)
+		summary['difficulty'] = pd.cut(summary['avg'], bins=DIFF_BINS, labels=DIFF_LABELS, right=True, include_lowest=True)
 		summary_list.append(summary)
 	summary_df = pd.concat(summary_list, axis=0)
 	return summary_df
+
+def draw_diff_thre(ax):
+	for thre in DIFF_BINS[1:-1]:
+		ax.axvline(thre, color='red', linestyle='--', alpha=0.3)
+
+
+def categorize_q_type(low_summ, high_summ):
+	# type 4: bad questions
+	type4 = (
+		(high_summ['difficulty'] == DIFF_HARD) &
+		((high_summ['quality'] == DIS_POOR) | (high_summ['quality'] == DIS_NEED_REVIEW))
+	)
+	# type 1: easy for both divisions
+	type1 = (
+		(low_summ['difficulty'] == DIFF_EASY) & 
+		(high_summ['difficulty'] == DIFF_EASY)
+	)
+	# type 2: good discrimination for lower division
+	type2 = (
+		(low_summ['quality'] == DIS_GOOD) & (~type4)
+	)
+	# type 3: good discrimination for higher division
+	type3 = high_summ['quality'] == DIS_GOOD
+	new_df = low_summ.copy()
+	new_df['type1'] = type1
+	new_df['type2'] = type2
+	new_df['type3'] = type3
+	new_df['type4'] = type4
+	new_df = new_df[['type1', 'type2', 'type3', 'type4']]
+	type_df = new_df.reset_index().rename(columns={"index": "question"}).melt(id_vars = 'question', value_vars = ['type1', 'type2', 'type3', 'type4'], var_name = 'type', value_name='true')
+	type_df = type_df[type_df['true'].astype(bool)][['type', 'question']]
+	new_df['type'] = new_df.apply(lambda series: ', '.join([col for col in series.index if series[col]]), axis=1)
+
+	n = low_summ.shape[0]
+	type1_prop = type1.sum()/n*100
+	type2_prop = type2.sum()/n*100
+	type3_prop = type3.sum()/n*100
+	type4_prop = type4.sum()/n*100
+	uncat_prop = (type1 | type2 | type3 | type4).sum()/n*100
+	type_prop_df = pd.DataFrame({
+		'type1 - Easy for Both': type1_prop, 
+		'type2 - Lower Division Discrimination': type2_prop, 
+		'type3 - Higher Division Discrimination': type3_prop, 
+		'type4 - Too Hard': type4_prop,
+		'uncategorized - Filler Questions': uncat_prop
+	}, index=['Percent* (%)']).transpose()
+
+	return new_df[['type']], type_prop_df, type_df
