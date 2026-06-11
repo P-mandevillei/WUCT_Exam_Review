@@ -125,40 +125,6 @@ if sc_files:
 
 			max_rows = max(summary.shape[0], summary2.shape[0])
 
-			# violin plot distribution
-			fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, max(2, int(max_rows/2.5))), sharey=True, layout="constrained")
-			draw_diff_thre(ax1)
-			sns.violinplot(
-				sc_df_long,
-				x='Score', y='Question', hue='quality', 
-				palette=quality_cmap, ax=ax1,
-				width=0.9,
-				inner="box", 
-				inner_kws={"box_width": 4},
-				dodge=False,
-				legend=False
-			)
-			ax1.set_xlim(-0.02, 1.02)
-			ax1.set_title(display_name)
-
-			draw_diff_thre(ax2)
-			sns.violinplot(
-				sc_df_long2,
-				x='Score', y='Question', hue='quality', 
-				palette=quality_cmap, ax=ax2,
-				width=0.9,
-				inner="box", 
-				inner_kws={"box_width": 4},
-				dodge=False
-			)
-			ax2.set_xlim(-0.02, 1.02)
-			ax2.set_title(display_name2)
-			ax2.legend(loc='center left', bbox_to_anchor=(1, 0.5))
-			
-			fig.suptitle("Question Scores Distribution", fontsize=16)
-			fig.tight_layout()
-			st.pyplot(fig)
-
 			# bar plot distribution
 			fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, max(2, int(max_rows/5))), sharey=True, sharex=True)
 			draw_diff_thre(ax1)
@@ -255,23 +221,6 @@ if sc_files:
 
 		else:
 			st.dataframe(summary)
-
-			# violin plot distribution
-			fig, ax = plt.subplots(figsize=(6, max(2, int(summary.shape[0]/2.5))))
-			draw_diff_thre(ax)
-			sns.violinplot(
-				sc_df_long,
-				x='Score', y='Question', hue='quality', 
-				palette=quality_cmap, ax=ax,
-				width=0.9,
-				inner="box", 
-				inner_kws={"box_width": 4},
-				dodge=False
-			)
-			ax.set_xlim(-0.02, 1.02)
-			ax.set_title(f"Question Scores Distribution, {display_name}")
-			ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
-			st.pyplot(fig)
 
 			# bar plot distribution
 			fig, ax = plt.subplots(figsize=(6, max(2, int(summary.shape[0]/5))))
