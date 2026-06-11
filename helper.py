@@ -1,9 +1,3 @@
-from constants import DIS_GOOD
-from pandas.core.array_algos import masked_accumulations
-from pandas.core.array_algos import masked_accumulations
-from constants import DIS_NEED_REVIEW
-from constants import DIFF_HARD
-from constants import DIFF_EASY
 import numpy as np
 import pandas as pd
 from constants import *
@@ -31,20 +25,12 @@ def calc_cronbach_alpha(df):
 	ca = n/(n-1)*(1 - sum_var/total_sc_var)
 	return ca
 
-def ca_rating(ca):
-	if ca > CA_RELIABLE:
-		return 'reliable'
-	elif ca > CA_ACCEPTABLE:
-		return 'acceptable'
-	else:
-		return 'unreliable'
-
 def summarize_total_score(df, name):
 	summary = df['Total Score'].describe().to_frame()
 	summary.columns = [name]
 	summary = summary.transpose()
 	summary['cronbach_alpha'] = calc_cronbach_alpha(df)
-	summary['internal_consistency'] = summary['cronbach_alpha'].apply(ca_rating)
+	summary['internal_consistency'] = pd.cut(summary['cronbach_alpha'], bins=CA_BINS, labels=CA_LABELS, right=True, include_lowest=True)
 	normalized = df['Normalized Total']
 	summary['normalized_mean'] = normalized.mean()
 	summary['normalized_std'] = normalized.std()
@@ -98,13 +84,13 @@ def summarize_questions(sc_df, norm_df):
 	summary_df = pd.concat(summary_list, axis=0)
 	return summary_df
 
-def draw_diff_thre(ax):
-	for thre in DIFF_BINS[1:-1]:
-		ax.axvline(thre, color='red', linestyle='--', alpha=0.3)
-
-
 def categorize_q_type(low_summ, high_summ):
-	# type 4: bad questions
+	# type 5: confusing questions
+	type5 = (
+		(low_summ['difficulty'] == DIFF_EASY) & 
+		(high_summ['difficulty'] == DIFF_HARD)
+	)
+	# type 4: too hard questions
 	type4 = (
 		(high_summ['difficulty'] == DIFF_HARD) &
 		((high_summ['quality'] == DIS_POOR) | (high_summ['quality'] == DIS_NEED_REVIEW))
@@ -125,8 +111,9 @@ def categorize_q_type(low_summ, high_summ):
 	new_df['type2'] = type2
 	new_df['type3'] = type3
 	new_df['type4'] = type4
-	new_df = new_df[['type1', 'type2', 'type3', 'type4']]
-	type_df = new_df.reset_index().rename(columns={"index": "question"}).melt(id_vars = 'question', value_vars = ['type1', 'type2', 'type3', 'type4'], var_name = 'type', value_name='true')
+	new_df['type5'] = type5
+	new_df = new_df[['type1', 'type2', 'type3', 'type4', 'type5']]
+	type_df = new_df.reset_index().rename(columns={"index": "question"}).melt(id_vars = 'question', value_vars = ['type1', 'type2', 'type3', 'type4', 'type5'], var_name = 'type', value_name='true')
 	type_df = type_df[type_df['true'].astype(bool)][['type', 'question']]
 	new_df['type'] = new_df.apply(lambda series: ', '.join([col for col in series.index if series[col]]), axis=1)
 
@@ -135,12 +122,14 @@ def categorize_q_type(low_summ, high_summ):
 	type2_prop = type2.sum()/n*100
 	type3_prop = type3.sum()/n*100
 	type4_prop = type4.sum()/n*100
-	uncat_prop = (~(type1 | type2 | type3 | type4)).sum()/n*100
+	type5_prop = type5.sum()/n*100
+	uncat_prop = (~(type1 | type2 | type3 | type4 | type5)).sum()/n*100
 	type_prop_df = pd.DataFrame({
 		'type1 - Easy for Both': type1_prop, 
 		'type2 - Lower Division Discrimination': type2_prop, 
 		'type3 - Higher Division Discrimination': type3_prop, 
 		'type4 - Too Hard': type4_prop,
+		'type5 - Confusing (Easy for LD, Hard for HD)': type5_prop,
 		'uncategorized - Filler Questions': uncat_prop
 	}, index=['Percent* (%)']).transpose()
 
