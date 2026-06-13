@@ -114,7 +114,7 @@ def categorize_q_type(low_summ, high_summ):
 	new_df['type5'] = type5
 	new_df = new_df[['type1', 'type2', 'type3', 'type4', 'type5']]
 	type_df = new_df.reset_index().rename(columns={"index": "question"}).melt(id_vars = 'question', value_vars = ['type1', 'type2', 'type3', 'type4', 'type5'], var_name = 'type', value_name='true')
-	type_df = type_df[type_df['true'].astype(bool)][['type', 'question']]
+	type_df = type_df[type_df['true'].astype(bool)][['type', 'question']].reset_index(drop=True)
 	new_df['type'] = new_df.apply(lambda series: ', '.join([col for col in series.index if series[col]]), axis=1)
 
 	n = low_summ.shape[0]
@@ -134,3 +134,21 @@ def categorize_q_type(low_summ, high_summ):
 	}, index=['Percent* (%)']).transpose()
 
 	return new_df[['type']], type_prop_df, type_df
+
+def get_summary_and_long_df(df):
+	norm = get_normalized_question_sc(df)
+	summ = summarize_questions(df, norm)
+	norm['Name'] = df['Name']
+	norm['Normalized Total'] = df['Normalized Total']
+	long_df = norm.melt(
+		id_vars=['Name', 'Normalized Total'],
+		value_vars=summ.index,
+		var_name='Question',
+		value_name='Score'
+	)
+	long_df = long_df.merge(
+		summ.reset_index().rename(columns={'index': 'Question'})[['Question', 'quality']],
+		on='Question'
+	)
+	long_df['Normalized Total Bin'] = pd.qcut(long_df['Normalized Total'], 2, labels=BINARY_LABELS)
+	return summ, long_df
