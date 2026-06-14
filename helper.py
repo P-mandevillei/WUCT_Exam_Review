@@ -14,9 +14,8 @@ def normalize_total_sc(df):
 
 def calc_cronbach_alpha(df):
 	var_list = []
-	for col in df.columns:
-		if "Question" in col:
-			var_list.append(df[col].std()**2)
+	for col in extract_question_cols(df):
+		var_list.append(df[col].std()**2)
 	n = len(var_list)
 	if n <= 1:
 		return 0
@@ -24,6 +23,13 @@ def calc_cronbach_alpha(df):
 	total_sc_var = df['Total Score'].std() ** 2
 	ca = n/(n-1)*(1 - sum_var/total_sc_var)
 	return ca
+
+def recalc_total_score(df):
+	total_score = np.zeros(df.shape[0])
+	for col in extract_question_cols(df):
+		total_score += df[col].to_numpy()
+	df['Total Score'] = total_score
+	return df
 
 def summarize_total_score(df, name):
 	summary = df['Total Score'].describe().to_frame()
@@ -35,6 +41,36 @@ def summarize_total_score(df, name):
 	summary['normalized_mean'] = normalized.mean()
 	summary['normalized_std'] = normalized.std()
 	return summary
+
+def calc_cronbach_alpha_if_item_deleted(df):
+	cas = {}
+	for col in extract_question_cols(df):
+		df_temp = df.drop(columns=[col])
+		recalc_total_score(df_temp)
+		ca = calc_cronbach_alpha(df_temp)
+		cas[col] = ca
+	cas_df = pd.DataFrame(cas, index=['alpha_if_deleted'])
+	cas_df = cas_df.transpose()
+	cas_df['internal_consistency_if_deleted'] = pd.cut(cas_df['alpha_if_deleted'], bins=CA_BINS, labels=CA_LABELS, right=True, include_lowest=True)
+	cas_df = cas_df.reset_index().rename(columns={'index': 'Question'})
+	return cas_df
+
+def calc_citc(df):
+	correlations = {}
+	for col in extract_question_cols(df):
+		item_sc = df[col].copy()
+		df_temp = df.drop(columns=[col])
+		recalc_total_score(df_temp)
+		if np.std(item_sc) == 0 or np.std(df_temp['Total Score']) == 0:
+			corr = 0
+		else:
+			corr = np.corrcoef(item_sc, df_temp['Total Score'])[0][1]
+		correlations[col] = corr
+	correlations_df = pd.DataFrame(correlations, index=['correlation'])
+	correlations_df = correlations_df.transpose()
+	correlations_df = correlations_df.reset_index().rename(columns={'index': 'Question'})
+	return correlations_df
+
 
 def make_total_sc_df(df_list, names):
 	total_sc_df_list = []
