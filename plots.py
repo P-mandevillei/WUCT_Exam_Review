@@ -1,6 +1,7 @@
 import seaborn as sns
 from matplotlib import pyplot as plt
 import streamlit as st
+import plotly.express as px
 import pandas as pd
 from helper import categorize_q_type
 from constants import *
@@ -77,6 +78,40 @@ def plot_exam_breakdown(ax, df, type, **kwargs):
             )
     return ax
 
+def plot_consistency(summary, display_name):
+    df = summary.reset_index().rename(columns={"index": "Question"})
+    fig = px.scatter(
+        df,
+        x="correlation",
+        y="alpha_increase",
+        color="quality",
+        color_discrete_map=quality_cmap,
+        hover_name="Question",
+        hover_data={
+            "correlation": ":.3f",
+            "alpha_increase": ":.4f",
+            "avg": ":.2f",
+            "discrimination_index": ":.3f",
+            "quality": True
+        },
+        title=f"Reliability Diagnostic Map, {display_name}",
+        labels={
+            "correlation": "Item-Total Correlation",
+            "alpha_increase": "Change in Alpha if Deleted",
+            "quality": "Question Quality"
+        }
+    )
+    fig.add_hline(y=0, line_dash="dash", line_color="gray")
+    fig.add_vline(x=0.3, line_dash="dash", line_color="gray")
+    
+    fig.update_layout(
+        xaxis_title="Item-Total Correlation",
+        yaxis_title="Change in Alpha if Deleted",
+        legend_title="Question Quality",
+        hovermode="closest"
+    )
+    return fig
+
 def exam_stats(stats_df, total_sc_df):
     st.header("Exam Breakdown")
 
@@ -126,7 +161,10 @@ def single_stats(summary, display_name, sc_df_long):
         ax.set_title(f"Discrimination Index, {display_name}")
         st.pyplot(fig)
     st.subheader("Question-Level Statistics")
-    bar, box, split_violin, raw_df = st.tabs(["Bar", "Box", "Discrimination", "Data"])
+    consistency, bar, box, split_violin, raw_df = st.tabs(["Consistency", "Bar", "Box", "Discrimination", "Data"])
+    with consistency:
+        fig = plot_consistency(summary, display_name)
+        st.plotly_chart(fig, use_container_width=True)
     # bar plot distribution
     with bar:
         fig, ax = plt.subplots(figsize=(6, max(2, int(summary.shape[0]/5))))
@@ -223,7 +261,15 @@ def double_stats(summary, summary2, display_name, display_name2, sc_df_long, sc_
     max_rows = max(summary.shape[0], summary2.shape[0])
 
     st.subheader("Normalized Statistics")
-    bar, box, split_violin, raw_df = st.tabs(["Bar", "Box", "Discrimination", "Data"])
+    consistency, bar, box, split_violin, raw_df = st.tabs(["Consistency", "Bar", "Box", "Discrimination", "Data"])
+    with consistency:
+        col1, col2 = st.columns(2)
+        with col1:
+            fig1 = plot_consistency(summary, display_name)
+            st.plotly_chart(fig1, use_container_width=True)
+        with col2:
+            fig2 = plot_consistency(summary2, display_name2)
+            st.plotly_chart(fig2, use_container_width=True)
     # bar plot distribution
     with bar:
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, max(2, int(max_rows/5))), sharey=True, sharex=True)

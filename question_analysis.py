@@ -50,12 +50,6 @@ if sc_files:
 
 		display_name = selected_name.replace('_', ' ')
 		ori_df1 = sc_df_list[idx_map[selected_name]]
-		ca = summarize_total_score(ori_df1, name)['cronbach_alpha'].item()
-		alpha_df = calc_cronbach_alpha_if_item_deleted(ori_df1)
-		alpha_df['CA_increase'] = alpha_df['alpha_if_deleted'] - ca
-		citc_df = calc_citc(ori_df1)
-		alpha_citc_df = alpha_df.merge(citc_df, on="Question")
-		st.dataframe(alpha_citc_df)
 		summary, sc_df_long = get_summary_and_long_df(ori_df1)
 
 		if compare_name is not None:

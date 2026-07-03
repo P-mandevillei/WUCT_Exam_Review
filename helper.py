@@ -172,8 +172,16 @@ def categorize_q_type(low_summ, high_summ):
 	return new_df[['type']], type_prop_df, type_df
 
 def get_summary_and_long_df(df):
+	ca = summarize_total_score(df, "placeholder")['cronbach_alpha'].item()
+	alpha_df = calc_cronbach_alpha_if_item_deleted(df)
+	alpha_df['alpha_increase'] = alpha_df['alpha_if_deleted'] - ca
+	citc_df = calc_citc(df)
+	alpha_citc_df = alpha_df.merge(citc_df, on="Question")
+
 	norm = get_normalized_question_sc(df)
 	summ = summarize_questions(df, norm)
+	summ = summ.merge(alpha_citc_df.set_index("Question"), left_index=True, right_index=True)
+
 	norm['Name'] = df['Name']
 	norm['Normalized Total'] = df['Normalized Total']
 	long_df = norm.melt(
