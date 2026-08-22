@@ -21,6 +21,20 @@ To ***save*** the tables, hover over and click the download button on the upper 
 
 ![illustration of saving a table](./img/save.png)
 
+### Generate a static HTML report
+
+The **Generate HTML Report** section at the bottom of the app creates one self-contained HTML file containing:
+
+- the complete exam breakdown;
+- one tab for every uploaded exam, including all question-level plots and summary data; and
+- one tab for every ordered exam comparison selected in the report builder.
+
+Use **Add comparison** to add lower-division/higher-division pairs, then select **Generate HTML Report** and **Download HTML Report**. The downloaded file can be opened directly in a web browser without Streamlit or the original CSV files. The report retains interactive Plotly reliability charts and embeds all other graphics in the document.
+
+The report builder runs independently from the rest of the app. During generation, a progress bar shows the total number of report plots and updates after each plot is embedded.
+
+The comparison report includes categorization overview and question-list tables, but it intentionally excludes the DOCX question-segmentation workflow.
+
 ## Interpretation Notes
 
 1. **Cronbach's $\alpha$**

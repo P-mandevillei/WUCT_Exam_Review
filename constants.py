@@ -1,4 +1,7 @@
 import re
+import matplotlib
+
+matplotlib.use("Agg")
 from matplotlib import pyplot as plt
 
 GROUP_QUANTILE = 0.27
